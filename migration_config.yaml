@@ -1,0 +1,43 @@
+version: "1.0"
+
+connections:
+  staging:
+    host: "localhost"
+    port: 3306
+    database: "staging_mysql"
+    username: "${STAGING_DB_USER}"
+    password: "${STAGING_DB_PASSWORD}"
+  
+  microservices:
+    product_service:
+      host: "localhost"
+      port: 3307
+      database: "product_microservice"
+      username: "${PRODUCT_DB_USER}"
+      password: "${PRODUCT_DB_PASSWORD}"
+
+migrations:
+  - migration_id: "products_to_microservice"
+    description: "Migrate PRODUCTS table to main_products_table and variation_products_table"
+
+    source:
+      tables:
+        - name: "PRODUCTS"
+
+    targets:
+      - database: "product_service"
+        table: "main_products_table"
+
+      - database: "product_service"
+        table: "variation_products_table"
+
+    transformation:
+      type: "custom"  # direct, custom
+      script: "migrations/products_transformation.py"
+      function: "transform_products_data"
+
+    dependencies: []
+    
+    validation:
+      post_migration:
+        - check: "custom"
