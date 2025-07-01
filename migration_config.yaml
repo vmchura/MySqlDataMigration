@@ -2,6 +2,7 @@ version: "1.0"
 
 connections:
   staging:
+    dump_file: "phase_00/dump-myapp-202506302052.sql"
     host: "localhost"
     port: 3306
     database: "staging_mysql"
@@ -35,9 +36,23 @@ migrations:
       type: "custom"  # direct, custom
       script: "migrations/products_transformation.py"
       function: "transform_products_data"
+      parameters:
+        variation_patterns:
+          - regex: "\\s+(\\d+x\\d+)$"
+            variation_type: "dimension"
+            description: "Match dimension patterns like '20x20', '40x40'"
+          - regex: "\\s+(\\d+(?:kg|g|ml|l|oz|lb))$"
+            variation_type: "weight_volume" 
+            description: "Match weight/volume patterns like '1kg', '500ml'"
+          - regex: "\\s+([A-Z]\\w*)$"
+            variation_type: "variant"
+            description: "Match capitalized variant names"
 
     dependencies: []
     
     validation:
       post_migration:
         - check: "custom"
+          description: "Validate foreign key relationships and data integrity"
+        - check: "row_count"
+          description: "Ensure no data loss during transformation"
